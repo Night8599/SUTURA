@@ -43,7 +43,7 @@ class ArmDriverNode(Node):
         self.declare_parameter('arm.state_rate_hz', 10.0)
         self.declare_parameter('arm.command_queue_size', 1)
         self.declare_parameter('arm.can_interface', 'can0')
-        self.declare_parameter('arm.ned1.ip_address', '10.10.10.10')
+        self.declare_parameter('arm.ned1.ip_address', '169.254.200.200')
         self.declare_parameter('arm.ned1.velocity_percent', 20)
         self.declare_parameter('arm.ned1.auto_calibrate', True)
         self.declare_parameter('arm.ned1.safety_margin_rad', 0.02)
@@ -137,7 +137,11 @@ class ArmDriverNode(Node):
                 kind, target = self._commands.get(timeout=0.1)
             except queue.Empty:
                 continue
-            ok = self.driver.move_to_home() if kind == 'home' else self.driver.set_joint_positions(target)
+            try:
+                ok = self.driver.move_to_home() if kind == 'home' else self.driver.set_joint_positions(target)
+            except Exception as exc:  # A driver bug must not kill the worker thread.
+                self.get_logger().error(f"Command raised {type(exc).__name__}: {exc}")
+                continue
             if not ok:
                 reason = getattr(self.driver, 'last_error', None) or 'unknown error'
                 self.get_logger().error(f"Command failed: {reason}")
@@ -199,13 +203,17 @@ class ArmDriverNode(Node):
     def _publish_state(self) -> None:
         if self.driver is None or not self._connected:
             return
+        positions = [float(v) for v in self.driver.get_joint_positions()]
+        status = self._current_status()
+        self._publish_status(status)
+        if status == 'DISCONNECTED':
+            return  # Stale positions must not be published as if they were live.
         msg = JointState()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.name = JOINT_NAMES
-        msg.position = [float(v) for v in self.driver.get_joint_positions()]
+        msg.position = positions
         msg.effort = [float(v) for v in self.driver.get_joint_torques()]
         self.joint_state_pub.publish(msg)
-        self._publish_status(self._current_status())
 
     def _current_status(self) -> str:
         if getattr(self.driver, 'estop_latched', False):
