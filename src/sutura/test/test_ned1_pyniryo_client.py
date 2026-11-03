@@ -21,7 +21,14 @@ import time
 
 import pytest
 
-pyniryo = pytest.importorskip("pyniryo")
+try:
+    import pyniryo
+except ImportError:
+    pytest.skip(
+        "pyniryo is not installed: skipping the real-client tests "
+        "(pip install --no-deps \"pyniryo==1.0.5\" and pip install numpy opencv-python, see docs/drivers/ned1.md)",
+        allow_module_level=True,
+    )
 
 from sutura.drivers.ned1_driver import Ned1ArmDriver  # noqa: E402
 
