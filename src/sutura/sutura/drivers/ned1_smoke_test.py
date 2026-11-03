@@ -4,9 +4,12 @@ Ned1 hardware smoke test, without ROS.
 Connects, calibrates if needed, reads joints, then moves ONE joint by a small offset
 and back. Every motion asks for confirmation first.
 
-    ros2 run sutura ned1_smoke_test --ip 10.10.10.10 --joint 1 --delta 0.1
+    ros2 run sutura ned1_smoke_test --joint 1 --delta 0.1
     # or, without building the package:
-    python3 -m sutura.drivers.ned1_smoke_test --ip 10.10.10.10
+    python3 -m sutura.drivers.ned1_smoke_test --ip 169.254.200.200
+
+The default IP is the robot's address over direct Ethernet (hotspot mode: 10.10.10.10).
+Requires pyniryo 1.0.5 (see docs/drivers/ned1.md).
 """
 
 import argparse
@@ -24,7 +27,7 @@ def _confirm(question: str, assume_yes: bool) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Ned1 hardware smoke test")
-    parser.add_argument('--ip', default='10.10.10.10', help="Robot IP address")
+    parser.add_argument('--ip', default='169.254.200.200', help="Robot IP address (hotspot: 10.10.10.10)")
     parser.add_argument('--joint', type=int, default=1, choices=range(1, 7), help="Joint to move (1-6)")
     parser.add_argument('--delta', type=float, default=0.1, help="Offset in radians (|delta| <= 0.3)")
     parser.add_argument('--velocity', type=int, default=10, help="Max velocity percentage (1-100)")

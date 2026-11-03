@@ -2,9 +2,14 @@
 Driver for the Niryo Ned (Ned1) robotic arm.
 
 Communication goes through the Niryo TCP server (port 40001) using `pyniryo`.
-Ned1 runs robot software <= v4.x, which is only supported by pyniryo <= 1.1.2:
+The team's Ned1 runs robot software 3.1.1, which is supported by pyniryo 1.0.5
+(tag v1.0.5 of github.com/NiryoRobotics/pyniryo). Its requirements.txt pins `enum34`
+and `opencv-python==4.2.0.32`, so it must be installed without dependencies:
 
-    pip install "pyniryo==1.1.2"
+    pip install --no-deps "pyniryo==1.0.5"
+    pip install numpy opencv-python
+
+See docs/drivers/ned1.md.
 
 Hardware constraints this driver has to live with:
   * Motion commands are blocking: `move_joints` returns only when the motion ends.
@@ -38,6 +43,21 @@ def _default_client_factory():
     return NiryoRobot()
 
 
+# pyniryo 1.0.5 (pyniryo/api/exceptions.py) signals a dead or unusable connection with these
+# classes. None of them derives from NiryoRobotException, so they are matched by name: the
+# module must not import pyniryo at load time. Everything else (NiryoRobotException "Command KO",
+# TcpCommandException) is a refusal by the robot or a bad argument; the link is still alive.
+_LINK_ERROR_NAMES = frozenset({
+    'HostNotReachableException',
+    'ClientNotConnectedException',
+    'InvalidAnswerException',
+})
+
+
+def _is_link_error(exc: Exception) -> bool:
+    return isinstance(exc, OSError) or type(exc).__name__ in _LINK_ERROR_NAMES
+
+
 class Ned1ArmDriver(BaseArmDriver):
     """BaseArmDriver implementation for the Niryo Ned1 over its TCP API."""
 
@@ -45,7 +65,7 @@ class Ned1ArmDriver(BaseArmDriver):
 
     def __init__(
         self,
-        ip_address: str = "10.10.10.10",
+        ip_address: str = "169.254.200.200",
         velocity_percent: int = 20,
         auto_calibrate: bool = True,
         safety_margin_rad: float = 0.02,
@@ -56,7 +76,8 @@ class Ned1ArmDriver(BaseArmDriver):
     ):
         """
         Args:
-            ip_address: Robot IP (10.10.10.10 in hotspot mode, 169.254.200.200 over Ethernet).
+            ip_address: Robot IP (169.254.200.200 over direct Ethernet, the team's setup;
+                10.10.10.10 in hotspot mode).
             velocity_percent: Arm max velocity as a percentage of its maximum (1-100).
             auto_calibrate: Run automatic calibration on connect if the robot needs it.
             safety_margin_rad: Margin kept away from each hardware joint limit.
@@ -166,7 +187,7 @@ class Ned1ArmDriver(BaseArmDriver):
                 self._robot.move_joints(target)
                 positions = self._read_joints_locked()
             except Exception as exc:
-                self._fail(f"Motion failed: {exc}")
+                self._on_exception("Motion failed", exc)
                 return False
             finally:
                 with self._state_lock:
@@ -181,13 +202,14 @@ class Ned1ArmDriver(BaseArmDriver):
         Returns the current joint positions in radians.
 
         During a motion the robot cannot be queried, so the last known positions are
-        returned without blocking.
+        returned without blocking. The same happens once the link is lost: the last
+        known positions are returned and `is_connected` is False.
         """
-        if self._robot is not None and self._io_lock.acquire(blocking=False):
+        if self.is_connected and self._robot is not None and self._io_lock.acquire(blocking=False):
             try:
                 self._set_positions_cache(self._read_joints_locked())
             except Exception as exc:
-                self._fail(f"Joint read failed: {exc}")
+                self._on_exception("Joint read failed", exc)
             finally:
                 self._io_lock.release()
         with self._state_lock:
@@ -226,7 +248,13 @@ class Ned1ArmDriver(BaseArmDriver):
         self._log.warning("Emergency stop reset.")
 
     def move_to_home(self) -> bool:
-        """Moves to the Niryo home pose (forearm resting on the shoulder)."""
+        """
+        Moves to the Niryo home pose (forearm resting on the shoulder).
+
+        In pyniryo 1.0.5 this is `move_joints(0.0, 0.3, -1.3, 0.0, 0.0, 0.0)`. It is a fixed,
+        vendor-defined target, so it is not checked against `max_step_rad`: from a far pose
+        the motion can be large.
+        """
         if not self.is_connected or self._estop_latched:
             return False
         with self._io_lock:
@@ -236,7 +264,7 @@ class Ned1ArmDriver(BaseArmDriver):
                 self._robot.move_to_home_pose()
                 positions = self._read_joints_locked()
             except Exception as exc:
-                self._fail(f"Home motion failed: {exc}")
+                self._on_exception("Home motion failed", exc)
                 return False
             finally:
                 with self._state_lock:
@@ -248,7 +276,8 @@ class Ned1ArmDriver(BaseArmDriver):
     # Internals
     # ------------------------------------------------------------------
     def _read_joints_locked(self) -> list[float]:
-        # pyniryo 1.1.x returns a list, >= 1.2 returns a JointsPosition; both are iterable.
+        # pyniryo 1.0.5 returns a list of floats; newer versions return a JointsPosition.
+        # Both are iterable.
         positions = [float(v) for v in self._robot.get_joints()]
         if len(positions) != self.NUM_JOINTS:
             raise RuntimeError(f"Robot returned {len(positions)} joints.")
@@ -270,6 +299,13 @@ class Ned1ArmDriver(BaseArmDriver):
     def _fail(self, message: str) -> None:
         self.last_error = message
         self._log.error(message)
+
+    def _on_exception(self, context: str, exc: Exception) -> None:
+        """Records a pyniryo failure. A lost link also marks the driver as disconnected."""
+        self._fail(f"{context}: {exc}")
+        if _is_link_error(exc):
+            self.is_connected = False
+            self._log.error("Link to the robot lost. Restart the node once the robot is reachable again.")
 
     @staticmethod
     def _format(values: list[float]) -> str:

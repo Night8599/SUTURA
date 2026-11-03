@@ -24,7 +24,7 @@
       command_queue_size: 1       # Commands received while the queue is full are dropped
       can_interface: "can0"       # MAKIINA only
       ned1:
-        ip_address: "10.10.10.10" # Hotspot: 10.10.10.10 | Ethernet: 169.254.200.200
+        ip_address: "169.254.200.200" # Ethernet (team setup): 169.254.200.200 | Hotspot: 10.10.10.10
         velocity_percent: 20      # 1-100, keep low for first real-world tests
         auto_calibrate: true
         safety_margin_rad: 0.02   # Margin from hardware limits (home pose j3=-1.30 sits 0.04 from -1.34)
