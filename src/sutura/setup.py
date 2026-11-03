@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'arm_driver_node = sutura.drivers.arm_driver_node:main',
+            'ned1_smoke_test = sutura.drivers.ned1_smoke_test:main',
             'vision_node = sutura.vision.vision_node:main',
             'control_node = sutura.control.control_node:main',
             'planning_node = sutura.planning.planning_node:main',
