@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import String
 
 from sutura.drivers.mock_driver import MockArmDriver
 from sutura.drivers.makiina_driver import MakiinaArmDriver
@@ -10,6 +11,12 @@ from sutura.drivers.makiina_driver import MakiinaArmDriver
 class ArmDriverNode(Node):
     def __init__(self):
         super().__init__('arm_driver_node')
+
+        self.status_pub = self.create_publisher(String, '/sutura/hardware_status', 10)
+        if self.driver.connect():
+            status_msg = String()
+            status_msg.data = "READY"
+            self.status_pub.publish(status_msg)
 
         # Parameters for selecting the driver type and CAN interface
         self.declare_parameter('arm_type', 'makiina')  # Options: 'makiina' or 'mock'
