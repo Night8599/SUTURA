@@ -1,11 +1,10 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Float32MultiArray
-from std_msgs.msg import String
+from std_msgs.msg import Float32MultiArray, String
 
-from sutura.drivers.mock_driver import MockArmDriver
 from sutura.drivers.makiina_driver import MakiinaArmDriver
+from sutura.drivers.mock_driver import MockArmDriver
 
 
 class ArmDriverNode(Node):

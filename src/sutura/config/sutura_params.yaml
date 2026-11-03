@@ -1,0 +1,19 @@
+/**:
+  ros__parameters:
+    grid_map:
+      resolution_mm: 0.5
+      width_cells: 200
+      height_cells: 200
+      default_frame_id: "camera_frame"
+
+    pattern:
+      type: "linear"              # Options: 'linear', 'mock'
+      margin_mm: 3.0              # Distance from wound boundary to first/last stitch
+      spacing_mm: 5.0             # Distance between consecutive stitches
+      entry_offset_mm: 4.0        # Lateral offset from centerline for entry/exit
+      default_entry_angle_deg: 90.0
+
+    planner:
+      type: "analytical"          # Options: 'analytical', 'moveit', 'mock'
+      max_cartesian_step_mm: 1.0
+      needle_radius_mm: 12.0

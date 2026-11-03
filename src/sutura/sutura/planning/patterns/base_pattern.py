@@ -1,21 +1,27 @@
 from abc import ABC, abstractmethod
-import numpy as np
-from sutura.utils.data_models import PointSequence3D
+
+from sutura.utils.data_models import GridMap2D, StitchTarget
 
 
 class BasePatternGenerator(ABC):
-    """Abstract base class for all suture point pattern generators."""
+    """Abstract Base Class for all suture pattern generators operating on a 2.5D GridMap."""
 
     @abstractmethod
-    def generate_stitch_points(
-        self, incision: PointSequence3D
-    ) -> PointSequence3D:
-        """Calculates entry, exit, and target 3D points along an incision.
+    def generate_pattern(
+        self,
+        grid_map: GridMap2D,
+        margin_mm: float = 3.0,
+        spacing_mm: float = 5.0,
+        entry_offset_mm: float = 4.0,
+    ) -> list[StitchTarget]:
+        """Generates an ordered list of StitchTargets derived from the GridMap2D surface.
 
         Args:
-            incision: 3D point sequence representing the incision beginning and end.
+            grid_map: 2.5D grid map containing elevation and wound_mask layers.
+            margin_mm: Safety distance in mm from wound boundaries to the first/last stitch.
+            spacing_mm: Distance in mm between consecutive stitches along the wound.
+            entry_offset_mm: Lateral distance in mm from wound centerline to entry/exit points.
 
         Returns:
-            A PointSequence3D containing the calculated stitch points.
+            List of StitchTarget instances containing target entry and exit Pose3D objects.
         """
-        pass

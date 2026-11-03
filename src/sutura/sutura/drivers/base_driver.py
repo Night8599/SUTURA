@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+
 
 class BaseArmDriver(ABC):
     """
@@ -24,7 +24,7 @@ class BaseArmDriver(ABC):
         """
 
     @abstractmethod
-    def set_joint_positions(self, joint_angles: List[float]) -> bool:
+    def set_joint_positions(self, joint_angles: list[float]) -> bool:
         """
         Sends position commands (in radians) to the joints.
         Args:
@@ -34,7 +34,7 @@ class BaseArmDriver(ABC):
         """
 
     @abstractmethod
-    def get_joint_positions(self) -> List[float]:
+    def get_joint_positions(self) -> list[float]:
         """
         Returns the current positions of the joints in radians.
         Returns:
@@ -42,7 +42,7 @@ class BaseArmDriver(ABC):
         """
 
     @abstractmethod
-    def get_joint_torques(self) -> List[float]:
+    def get_joint_torques(self) -> list[float]:
         """
         Returns the torques read from the joints (used for force detection in the pad).
         Returns:

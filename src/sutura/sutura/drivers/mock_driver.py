@@ -1,6 +1,5 @@
-import time
-from typing import List
 from sutura.drivers.base_driver import BaseArmDriver
+
 
 class MockArmDriver(BaseArmDriver):
     """
@@ -22,17 +21,17 @@ class MockArmDriver(BaseArmDriver):
     def disconnect(self) -> None:
         self.is_connected = False
 
-    def set_joint_positions(self, joint_angles: List[float]) -> bool:
+    def set_joint_positions(self, joint_angles: list[float]) -> bool:
         if not self.is_connected or len(joint_angles) != self.num_joints:
             return False
         # Simulate the robotic arm moving to the desired positions
         self._current_positions = list(joint_angles)
         return True
 
-    def get_joint_positions(self) -> List[float]:
+    def get_joint_positions(self) -> list[float]:
         return self._current_positions
 
-    def get_joint_torques(self) -> List[float]:
+    def get_joint_torques(self) -> list[float]:
         # Simulate some arbitrary torque values for testing purposes
         return [0.1] * self.num_joints
 

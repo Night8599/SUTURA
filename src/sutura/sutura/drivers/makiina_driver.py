@@ -1,4 +1,3 @@
-from typing import List
 from sutura.drivers.base_driver import BaseArmDriver
 
 
@@ -29,7 +28,7 @@ class MakiinaArmDriver(BaseArmDriver):
         self.is_connected = False
         print("[MAKIINA] Driver disconnected successfully.")
 
-    def set_joint_positions(self, joint_angles: List[float]) -> bool:
+    def set_joint_positions(self, joint_angles: list[float]) -> bool:
         if not self.is_connected:
             print("[MAKIINA][ERROR] Driver not connected. Cannot send joint positions.")
             return False
@@ -44,10 +43,10 @@ class MakiinaArmDriver(BaseArmDriver):
         print(f"[MAKIINA][CAN tx -> {self.interface}] Set Positions (rad): [{angles_str}]")
         return True
 
-    def get_joint_positions(self) -> List[float]:
+    def get_joint_positions(self) -> list[float]:
         return self._current_positions
 
-    def get_joint_torques(self) -> List[float]:
+    def get_joint_torques(self) -> list[float]:
         # Retorna valores simulados de esforço (em N.m) nas articulações
         return [0.15, 0.22, 0.08, 0.05, 0.03, 0.01]
 
