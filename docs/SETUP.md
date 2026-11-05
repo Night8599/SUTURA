@@ -76,7 +76,7 @@ Fonte: [Colcon Tutorial (jazzy)](https://docs.ros.org/en/jazzy/Tutorials/Beginne
 ```bash
 mkdir -p ~/sutura_ws/src
 cd ~/sutura_ws/src
-git clone https://github.com/Night8599/SUTURA.git
+git clone https://github.com/henrique-kado/SUTURA.git
 cd ~/sutura_ws
 rosdep install --from-paths src --ignore-src -y   # instala dependências de package.xml
 colcon build --symlink-install
@@ -130,7 +130,7 @@ call C:\ros2_ws\ros2-windows\local_setup.bat
 pip install -U colcon-common-extensions
 mkdir C:\ros2_ws\src
 cd C:\ros2_ws\src
-git clone https://github.com/Night8599/SUTURA.git
+git clone https://github.com/henrique-kado/SUTURA.git
 cd C:\ros2_ws
 colcon build --symlink-install
 call install\setup.bat
